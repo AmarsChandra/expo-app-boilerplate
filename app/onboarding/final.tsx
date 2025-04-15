@@ -1,25 +1,43 @@
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Modal, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { TouchableOpacity as GestureTouchableOpacity } from 'react-native-gesture-handler';
 import { useSuperwall } from '@/hooks/useSuperwall';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { SUPERWALL_TRIGGERS } from '@/config/superwall';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { MaterialCommunityIcons as IconType } from '@expo/vector-icons';
+import { useState } from 'react';
 
 export default function FinalScreen() {
   const { showPaywall } = useSuperwall();
   const { setIsOnboarded } = useOnboarding();
+  const [isSignUpModalVisible, setIsSignUpModalVisible] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleGetStarted = async () => {
     try {
-      await showPaywall(SUPERWALL_TRIGGERS.ONBOARDING);
-      setIsOnboarded(true);
+      setIsSignUpModalVisible(true);
     } catch (error) {
-      console.error('Failed to show paywall:', error);
+      console.error('Failed to open sign-up modal:', error);
     }
+  };
+
+  const handleSignUp = () => {
+    // Here you would typically handle the sign-up logic with your backend
+    console.log('Sign up with:', email, password);
+    setIsSignUpModalVisible(false);
+    setIsOnboarded(true);
+  };
+
+  const handleLogin = () => {
+    // Here you would typically handle the login logic with your backend
+    console.log('Login with:', email, password);
+    setIsSignUpModalVisible(false);
+    setIsOnboarded(true);
   };
 
   return (
@@ -41,14 +59,55 @@ export default function FinalScreen() {
             <Benefit icon="account-plus" text="Connect with friends" />
             <Benefit icon="playlist-star" text="Build your music profile" />
           </View>
-        </ScrollView>
 
-        <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
-          <ThemedText type="defaultSemiBold" style={styles.buttonText}>
-            Start Listening
-          </ThemedText>
-        </TouchableOpacity>
+          <GestureTouchableOpacity style={styles.button} onPress={handleGetStarted}>
+            <ThemedText style={styles.buttonText}>Start Listening</ThemedText>
+          </GestureTouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isSignUpModalVisible}
+        onRequestClose={() => setIsSignUpModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ThemedText type="title" style={styles.modalTitle}>
+              {isLoginMode ? 'Login' : 'Sign Up'}
+            </ThemedText>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={isLoginMode ? handleLogin : handleSignUp}
+            >
+              <ThemedText style={styles.buttonText}>
+                {isLoginMode ? 'Login' : 'Sign Up'}
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)}>
+              <ThemedText style={styles.switchModeText}>
+                {isLoginMode ? 'Need an account? Sign Up' : 'Already have an account? Login'}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -127,5 +186,41 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 18,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+  },
+  signUpButton: {
+    backgroundColor: '#0A7EA4',
+    padding: 15,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  switchModeText: {
+    marginTop: 10,
+    color: '#0A7EA4',
   },
 }); 
