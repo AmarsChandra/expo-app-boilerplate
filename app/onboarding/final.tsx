@@ -1,4 +1,4 @@
-import { StyleSheet, View, ScrollView, Modal, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView, Modal, TextInput, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TouchableOpacity as GestureTouchableOpacity } from 'react-native-gesture-handler';
@@ -9,6 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { MaterialCommunityIcons as IconType } from '@expo/vector-icons';
 import { useState } from 'react';
+import { supabaseService } from '@/services/supabase';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function FinalScreen() {
   const { showPaywall } = useSuperwall();
@@ -17,6 +20,7 @@ export default function FinalScreen() {
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGetStarted = async () => {
     try {
@@ -26,18 +30,68 @@ export default function FinalScreen() {
     }
   };
 
-  const handleSignUp = () => {
-    // Here you would typically handle the sign-up logic with your backend
-    console.log('Sign up with:', email, password);
-    setIsSignUpModalVisible(false);
-    setIsOnboarded(true);
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabaseService.signUp(email, password);
+      
+      if (error) {
+        Alert.alert('Sign Up Error', error.message);
+        return;
+      }
+
+      if (data?.user?.identities?.length === 0) {
+        Alert.alert('Error', 'An account with this email already exists');
+        return;
+      }
+
+      Alert.alert(
+        'Success',
+        'Please check your email for a confirmation link to complete your registration.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setIsSignUpModalVisible(false);
+              setIsOnboarded(true);
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleLogin = () => {
-    // Here you would typically handle the login logic with your backend
-    console.log('Login with:', email, password);
-    setIsSignUpModalVisible(false);
-    setIsOnboarded(true);
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const { error } = await supabaseService.signIn(email, password);
+      
+      if (error) {
+        Alert.alert('Login Error', error.message);
+        return;
+      }
+
+      setIsSignUpModalVisible(false);
+      setIsOnboarded(true);
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,6 +128,7 @@ export default function FinalScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
             <ThemedText type="title" style={styles.modalTitle}>
               {isLoginMode ? 'Login' : 'Sign Up'}
             </ThemedText>
@@ -84,6 +139,7 @@ export default function FinalScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isLoading}
             />
             <TextInput
               style={styles.input}
@@ -91,16 +147,18 @@ export default function FinalScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              editable={!isLoading}
             />
             <TouchableOpacity
-              style={styles.signUpButton}
+              style={[styles.signUpButton, isLoading && styles.buttonDisabled]}
               onPress={isLoginMode ? handleLogin : handleSignUp}
+              disabled={isLoading}
             >
               <ThemedText style={styles.buttonText}>
-                {isLoginMode ? 'Login' : 'Sign Up'}
+                {isLoading ? 'Please wait...' : (isLoginMode ? 'Login' : 'Sign Up')}
               </ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)}>
+            <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)} disabled={isLoading}>
               <ThemedText style={styles.switchModeText}>
                 {isLoginMode ? 'Need an account? Sign Up' : 'Already have an account? Login'}
               </ThemedText>
@@ -189,38 +247,53 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH * 1.2, // 3/5 of screen height
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
     alignItems: 'center',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
     marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
     width: '100%',
-    padding: 10,
-    marginBottom: 10,
+    padding: 15,
+    marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    fontSize: 16,
   },
   signUpButton: {
     backgroundColor: '#0A7EA4',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 10,
     width: '100%',
     alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   switchModeText: {
-    marginTop: 10,
+    marginTop: 20,
     color: '#0A7EA4',
+    fontSize: 16,
   },
 }); 
