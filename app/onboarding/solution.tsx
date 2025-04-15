@@ -24,16 +24,16 @@ export default function SolutionScreen() {
           <View style={styles.header}>
             <MaterialCommunityIcons name="lightbulb-on" size={48} color="#0A7EA4" />
             <ThemedText type="title" style={styles.title}>
-              Introducing a Better Way
+              Introducing Loop
             </ThemedText>
           </View>
 
           <View style={styles.mainFeature}>
             <ThemedText type="defaultSemiBold" style={styles.mainTitle}>
-              Your App's Core Value
+              Your Personal Music Journal
             </ThemedText>
             <ThemedText style={styles.mainDescription}>
-              One clear, powerful sentence that explains exactly how you solve the user's problem.
+              A dedicated space to rate, review, and share your favorite songs with friends and fellow music enthusiasts.
             </ThemedText>
           </View>
 
@@ -41,19 +41,19 @@ export default function SolutionScreen() {
             <View style={styles.benefit}>
               <MaterialCommunityIcons name="check-circle" size={24} color="#0A7EA4" />
               <ThemedText style={styles.benefitText}>
-                Key benefit or feature that solves their pain
+                Rate and review songs with a simple 5-star system
               </ThemedText>
             </View>
             <View style={styles.benefit}>
               <MaterialCommunityIcons name="check-circle" size={24} color="#0A7EA4" />
               <ThemedText style={styles.benefitText}>
-                Another important advantage of your solution
+                Follow friends and discover their music taste
               </ThemedText>
             </View>
             <View style={styles.benefit}>
               <MaterialCommunityIcons name="check-circle" size={24} color="#0A7EA4" />
               <ThemedText style={styles.benefitText}>
-                A third compelling reason to use your app
+                Build your music profile and track your listening history
               </ThemedText>
             </View>
           </View>

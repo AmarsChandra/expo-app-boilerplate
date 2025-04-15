@@ -20,13 +20,13 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           <View style={styles.main}>
-            <MaterialCommunityIcons name="star" size={64} color="#0A7EA4" />
+            <MaterialCommunityIcons name="music-note" size={64} color="#0A7EA4" />
             <ThemedText type="title" style={styles.title}>
-              Your App Name
+              Loop
             </ThemedText>
             <View style={styles.subtitleContainer}>
               <ThemedText style={styles.subtitle}>
-                A short, compelling tagline that captures your app's value
+                Share your music journey. Rate songs, discover new tracks, and connect with fellow music lovers.
               </ThemedText>
             </View>
           </View>
@@ -53,18 +53,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: 'space-between',
-    paddingVertical: 24,
+    paddingVertical: 32,
   },
   main: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: 32,
+    paddingTop: 24,
   },
   title: {
-    fontSize: 36,
+    fontSize: 48,
     textAlign: 'center',
     paddingHorizontal: 16,
+    lineHeight: 56,
   },
   subtitleContainer: {
     paddingHorizontal: 32,

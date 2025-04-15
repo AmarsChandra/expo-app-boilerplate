@@ -27,25 +27,25 @@ export default function FinalScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <MaterialCommunityIcons name="rocket-launch" size={48} color="#0A7EA4" />
+            <MaterialCommunityIcons name="play-circle" size={48} color="#0A7EA4" />
             <ThemedText type="title" style={styles.title}>
-              Start Building Today
+              Start Your Music Journey
             </ThemedText>
             <ThemedText style={styles.description}>
-              You're all set to create your next great app. Get started now and save weeks of development time!
+              Join a community of music lovers sharing their passion for songs and discovering new tracks together.
             </ThemedText>
           </View>
 
           <View style={styles.benefits}>
-            <Benefit icon="lightning-bolt" text="Launch faster" />
-            <Benefit icon="palette" text="Professional design" />
-            <Benefit icon="cash-multiple" text="Ready for monetization" />
+            <Benefit icon="music" text="Rate your favorite songs" />
+            <Benefit icon="account-plus" text="Connect with friends" />
+            <Benefit icon="playlist-star" text="Build your music profile" />
           </View>
         </ScrollView>
 
         <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
           <ThemedText type="defaultSemiBold" style={styles.buttonText}>
-            Get Started Now
+            Start Listening
           </ThemedText>
         </TouchableOpacity>
       </SafeAreaView>

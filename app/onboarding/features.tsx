@@ -23,27 +23,32 @@ export default function FeaturesScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <MaterialCommunityIcons name="check-decagram" size={48} color="#0A7EA4" />
+            <MaterialCommunityIcons name="music-box-multiple" size={48} color="#0A7EA4" />
             <ThemedText type="title" style={styles.title}>
-              Ready to Use
+              Key Features
             </ThemedText>
           </View>
 
           <View style={styles.features}>
             <Feature
-              icon="cart-variant"
-              title="In-App Purchases"
-              description="Superwall integration for subscriptions and one-time purchases"
+              icon="star"
+              title="Rate & Review"
+              description="Share your thoughts on songs with a simple 5-star rating system and optional comments"
             />
             <Feature
-              icon="navigation"
-              title="Modern Navigation"
-              description="File-based routing with Expo Router for a great UX"
+              icon="account-group"
+              title="Follow & Discover"
+              description="Connect with friends and discover new music through their reviews and ratings"
             />
             <Feature
-              icon="theme-light-dark"
-              title="Theming System"
-              description="Beautiful dark and light mode support out of the box"
+              icon="playlist-music"
+              title="Music Profile"
+              description="Build your personal music profile with your favorite songs and artists"
+            />
+            <Feature
+              icon="history"
+              title="Listening History"
+              description="Track your music journey and see how your taste evolves over time"
             />
           </View>
         </ScrollView>

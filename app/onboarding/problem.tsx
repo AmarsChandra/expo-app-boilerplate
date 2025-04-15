@@ -23,18 +23,18 @@ export default function ProblemScreen() {
         >
           <View style={styles.header}>
             <ThemedText type="title" style={styles.title}>
-              The Problem
+              The Music Discovery Problem
             </ThemedText>
             <ThemedText style={styles.description}>
-              Describe the main challenge or pain point your users face. Make it relatable and specific.
+              Finding and sharing music should be simple and social, but current platforms make it complicated and impersonal.
             </ThemedText>
           </View>
 
           <View style={styles.content}>
             <View style={styles.example}>
-              <MaterialCommunityIcons name="alert-circle" size={32} color="#0A7EA4" />
+              <MaterialCommunityIcons name="music-note" size={32} color="#0A7EA4" />
               <ThemedText style={styles.exampleText}>
-                "I struggle with X every day, and it costs me Y hours per week..."
+                "I find amazing songs but have no easy way to share my thoughts and ratings with friends..."
               </ThemedText>
             </View>
 
@@ -42,19 +42,19 @@ export default function ProblemScreen() {
               <View style={styles.point}>
                 <MaterialCommunityIcons name="close" size={24} color="#E11D48" />
                 <ThemedText style={styles.pointText}>
-                  Current solutions are expensive and complex
+                  No dedicated platform for music reviews and ratings
                 </ThemedText>
               </View>
               <View style={styles.point}>
                 <MaterialCommunityIcons name="close" size={24} color="#E11D48" />
                 <ThemedText style={styles.pointText}>
-                  Users waste time on manual workarounds
+                  Hard to discover new music from people you trust
                 </ThemedText>
               </View>
               <View style={styles.point}>
                 <MaterialCommunityIcons name="close" size={24} color="#E11D48" />
                 <ThemedText style={styles.pointText}>
-                  Existing tools lack key features
+                  Scattered music discussions across different apps
                 </ThemedText>
               </View>
             </View>
@@ -86,14 +86,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 32,
   },
   header: {
-    gap: 8,
+    gap: 12,
     marginBottom: 32,
   },
   title: {
     fontSize: 36,
+    lineHeight: 44,
   },
   description: {
     fontSize: 16,
