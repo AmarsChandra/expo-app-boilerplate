@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabaseService, type Profile } from '../../src/services/supabase';
 import { useState, useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { ProfileModal } from './profile-modal';
 
 function ProfileCard({ profile, onPress }: { profile: Profile; onPress: () => void }) {
   return (
@@ -30,7 +30,7 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
 
   const searchProfiles = async (query: string) => {
     if (!query.trim()) {
@@ -40,15 +40,11 @@ export default function SearchScreen() {
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabaseService.searchProfiles(query);
-      
-      if (error) throw error;
-      
-      if (data) {
-        setProfiles(data);
-      }
+      const results = await supabaseService.searchProfiles(query);
+      setProfiles(results);
     } catch (err) {
       console.error('Error searching profiles:', err);
+      setProfiles([]);
     } finally {
       setIsLoading(false);
     }
@@ -63,44 +59,57 @@ export default function SearchScreen() {
   }, [searchQuery]);
 
   const handleProfilePress = (profile: Profile) => {
-    router.push({
-      pathname: '/profile/[id]',
-      params: { id: profile.id }
-    });
+    setSelectedProfile(profile);
   };
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search profiles..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-          />
+          <View style={styles.searchInputContainer}>
+            <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search profiles..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+            />
+          </View>
+          
+          {searchQuery && (
+            <View style={styles.dropdownContainer}>
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ThemedText>Searching...</ThemedText>
+                </View>
+              ) : profiles.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <ThemedText>No profiles found</ThemedText>
+                </View>
+              ) : (
+                <FlatList
+                  data={profiles}
+                  renderItem={({ item }) => (
+                    <ProfileCard
+                      profile={item}
+                      onPress={() => handleProfilePress(item)}
+                    />
+                  )}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.dropdownContent}
+                  keyboardShouldPersistTaps="handled"
+                />
+              )}
+            </View>
+          )}
         </View>
-        
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ThemedText>Searching...</ThemedText>
-          </View>
-        ) : profiles.length === 0 && searchQuery ? (
-          <View style={styles.emptyContainer}>
-            <ThemedText>No profiles found</ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={profiles}
-            renderItem={({ item }) => (
-              <ProfileCard
-                profile={item}
-                onPress={() => handleProfilePress(item)}
-              />
-            )}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
+
+        {selectedProfile && (
+          <ProfileModal
+            profile={selectedProfile}
+            visible={!!selectedProfile}
+            onClose={() => setSelectedProfile(null)}
           />
         )}
       </SafeAreaView>
@@ -117,37 +126,56 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
-  searchInput: {
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F8F8F8',
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
     fontSize: 16,
   },
-  listContent: {
-    paddingHorizontal: 16,
-  },
-  profileCard: {
+  dropdownContainer: {
+    position: 'absolute',
+    top: 72,
+    left: 16,
+    right: 16,
     backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 8,
+    maxHeight: 300,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    zIndex: 1000,
+  },
+  dropdownContent: {
+    padding: 8,
+  },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   profileInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 12,
   },
   defaultAvatar: {
@@ -156,19 +184,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   username: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 16,
     alignItems: 'center',
-    padding: 20,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 16,
     alignItems: 'center',
-    padding: 20,
   },
 }); 
