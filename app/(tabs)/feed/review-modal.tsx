@@ -210,6 +210,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
         artist_name: selectedAlbum.artists[0].name,
         rating: ratingNum,
         comment: reviewText,
+        album_cover_url: selectedAlbum.images[0]?.url || null
       };
 
       const { error } = await supabaseService.createReview(reviewData);

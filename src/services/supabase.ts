@@ -29,6 +29,7 @@ export type Review = {
   artist_name: string;
   rating: number;
   comment?: string;
+  album_cover_url?: string;
   created_at: string;
   updated_at: string;
 };
@@ -206,6 +207,7 @@ export const supabaseService = {
         artist_name,
         rating,
         comment,
+        album_cover_url,
         created_at,
         updated_at,
         profiles:user_id (

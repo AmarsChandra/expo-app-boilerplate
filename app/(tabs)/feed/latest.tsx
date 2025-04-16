@@ -13,6 +13,7 @@ type ReviewWithProfile = {
   artist_name: string;
   rating: number;
   comment: string | null;
+  album_cover_url?: string;
   created_at: string;
   updated_at: string;
   profiles: {
@@ -44,32 +45,39 @@ function ReviewCard({ review }: { review: ReviewWithProfile }) {
             <ThemedText style={styles.date}>{formattedDate}</ThemedText>
           </View>
         </View>
+        {review.album_cover_url && (
+          <Image 
+            source={{ uri: review.album_cover_url }} 
+            style={styles.albumCover}
+          />
+        )}
       </View>
 
-      <View style={styles.albumInfo}>
-        <ThemedText style={styles.songTitle}>{review.song_title}</ThemedText>
-        <ThemedText style={styles.artistName}>{review.artist_name}</ThemedText>
-      </View>
-
-      <View style={styles.ratingContainer}>
-        <View style={styles.ratingStars}>
-          {[...Array(5)].map((_, index) => (
-            <MaterialCommunityIcons
-              key={index}
-              name={index < review.rating ? "star" : "star-outline"}
-              size={20}
-              color="#FFD700"
-            />
-          ))}
+      <View style={styles.contentSection}>
+        <View style={styles.albumInfo}>
+          <ThemedText style={styles.songTitle}>{review.song_title}</ThemedText>
+          <ThemedText style={styles.artistName}>{review.artist_name}</ThemedText>
         </View>
-        <ThemedText style={styles.ratingText}>{review.rating.toFixed(1)}</ThemedText>
-      </View>
 
-      {review.comment && (
-        <View style={styles.commentContainer}>
-          <ThemedText style={styles.content}>{review.comment}</ThemedText>
+        <View style={styles.ratingContainer}>
+          <View style={styles.ratingStars}>
+            {[...Array(5)].map((_, index) => (
+              <MaterialCommunityIcons
+                key={index}
+                name={index < review.rating ? "star" : "star-outline"}
+                size={20}
+                color="#FFD700"
+              />
+            ))}
+          </View>
         </View>
-      )}
+
+        {review.comment && (
+          <View style={styles.commentContainer}>
+            <ThemedText style={styles.content}>{review.comment}</ThemedText>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -182,49 +190,60 @@ const styles = StyleSheet.create({
   },
   reviewCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 15,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
+    position: 'relative',
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  userTextContainer: {
-    marginLeft: 12,
+    flex: 1,
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    marginRight: 12,
   },
   defaultAvatar: {
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  userTextContainer: {
+    flex: 1,
+  },
   username: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
   },
   date: {
     fontSize: 12,
     color: '#666',
-    marginTop: 2,
+  },
+  albumCover: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 8,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  contentSection: {
+    flex: 1,
   },
   albumInfo: {
     marginBottom: 12,
@@ -239,18 +258,10 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
   ratingStars: {
     flexDirection: 'row',
-    marginRight: 8,
-  },
-  ratingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
   },
   commentContainer: {
     backgroundColor: '#F8F8F8',
@@ -260,7 +271,6 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#333',
   },
   emptyContainer: {
     flex: 1,
