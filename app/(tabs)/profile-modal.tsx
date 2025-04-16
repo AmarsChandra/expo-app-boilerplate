@@ -4,6 +4,7 @@ import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabaseService, type Profile, type Review } from '../../src/services/supabase';
+import ReviewDetailModal from '../../app/(tabs)/feed/review-detail-modal';
 
 type ReviewWithProfile = Review & {
   profiles: {
@@ -84,6 +85,7 @@ export function ProfileModal({ profile, visible, onClose }: ProfileModalProps) {
   const [reviews, setReviews] = useState<ReviewWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<ReviewWithProfile | null>(null);
 
   const fetchReviews = async () => {
     try {
@@ -152,7 +154,7 @@ export function ProfileModal({ profile, visible, onClose }: ProfileModalProps) {
             renderItem={({ item }) => (
               <ReviewCard
                 review={item}
-                onPress={() => {}}
+                onPress={() => setSelectedReview(item)}
               />
             )}
             keyExtractor={(item) => item.id}
@@ -175,6 +177,12 @@ export function ProfileModal({ profile, visible, onClose }: ProfileModalProps) {
           />
         </View>
       </View>
+
+      <ReviewDetailModal
+        review={selectedReview}
+        visible={!!selectedReview}
+        onClose={() => setSelectedReview(null)}
+      />
     </Modal>
   );
 }
