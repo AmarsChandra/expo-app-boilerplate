@@ -196,11 +196,26 @@ export const supabaseService = {
   },
 
   getReviews: async () => {
+    console.log('Fetching reviews from Supabase...');
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, profiles(*)')
+      .select(`
+        id,
+        user_id,
+        song_title,
+        artist_name,
+        rating,
+        comment,
+        created_at,
+        updated_at,
+        profiles:user_id (
+          username,
+          avatar_url
+        )
+      `)
       .order('created_at', { ascending: false });
 
+    console.log('Supabase response:', { data, error });
     return { data, error };
   },
 }; 

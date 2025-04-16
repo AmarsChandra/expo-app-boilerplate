@@ -33,7 +33,7 @@ export default function FeedLayout() {
     transform: [{
       translateX: indicatorAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, SCREEN_WIDTH / 2],
+        outputRange: [SCREEN_WIDTH / 2, 0],
       }),
     }],
   };
@@ -42,19 +42,6 @@ export default function FeedLayout() {
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.tab}
-            onPress={() => handleTabPress('latest')}
-          >
-            <ThemedText
-              style={[
-                styles.tabText,
-                activeTab === 'latest' && styles.activeTabText,
-              ]}
-            >
-              Latest
-            </ThemedText>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.tab}
             onPress={() => handleTabPress('following')}
@@ -68,22 +55,37 @@ export default function FeedLayout() {
               Following
             </ThemedText>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabPress('latest')}
+          >
+            <ThemedText
+              style={[
+                styles.tabText,
+                activeTab === 'latest' && styles.activeTabText,
+              ]}
+            >
+              Latest
+            </ThemedText>
+          </TouchableOpacity>
           <Animated.View style={[styles.indicator, indicatorStyle]} />
         </View>
       </SafeAreaView>
 
-      <Stack.Screen 
-        name="latest" 
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="following" 
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack>
+        <Stack.Screen 
+          name="latest" 
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="following" 
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack>
 
       <TouchableOpacity
         style={styles.fab}
