@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   reviewCard: {
     backgroundColor: 'white',

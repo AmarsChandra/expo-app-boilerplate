@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingTop: 60,
   },
   content: {

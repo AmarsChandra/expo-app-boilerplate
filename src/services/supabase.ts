@@ -231,4 +231,18 @@ export const supabaseService = {
     console.log('Supabase response:', { data, error });
     return { data, error };
   },
+
+  searchProfiles: async (query: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .ilike('username', `%${query}%`)
+      .order('username', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
 }; 
