@@ -6,12 +6,14 @@ interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   loading: boolean;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => {},
   loading: true,
+  signOut: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -19,6 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const signOut = async () => {
+    await supabaseService.signOut();
+    setUser(null);
+  };
 
   useEffect(() => {
     // Get initial session
@@ -39,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading }}>
+    <AuthContext.Provider value={{ user, setUser, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

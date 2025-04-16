@@ -108,6 +108,13 @@ export const supabaseService = {
     return { data, error };
   },
 
+  deleteAccount: async () => {
+    const { error } = await supabase.auth.admin.deleteUser(
+      (await supabase.auth.getUser()).data.user?.id ?? ''
+    );
+    if (error) throw error;
+  },
+
   // Follow functions
   followUser: async (followerId: string, followingId: string) => {
     const { data, error } = await supabase
