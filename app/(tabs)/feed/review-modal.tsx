@@ -3,7 +3,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
-import { supabaseService } from '@/services/supabase';
+import { supabaseService, type Review } from '@/services/supabase';
+import { supabase } from '@/services/supabase';
 
 // Types
 type Artist = {
@@ -152,7 +153,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
 
   const handleAlbumSelect = (album: Album) => {
     setSelectedAlbum(album);
-    setSearchQuery(album.name);
+    setSearchQuery('');
     setSearchResults([]);
   };
 
@@ -170,14 +171,48 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
 
     try {
       setIsLoading(true);
-      const { error } = await supabaseService.createReview({
-        song_id: selectedAlbum.id,
-        rating: ratingNum,
-        content: reviewText,
-        album_name: selectedAlbum.name,
+      const session = await supabase.auth.getSession();
+      const userId = session.data.session?.user?.id;
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // First, check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: userId,
+              username: session.data.session?.user?.email?.split('@')[0] || 'user',
+              display_name: session.data.session?.user?.email?.split('@')[0] || 'User',
+            }
+          ]);
+
+        if (createProfileError) {
+          throw createProfileError;
+        }
+      } else if (profileError) {
+        throw profileError;
+      }
+
+      const reviewData: Omit<Review, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: userId,
+        song_title: selectedAlbum.name,
         artist_name: selectedAlbum.artists[0].name,
-        album_image_url: selectedAlbum.images[0]?.url || null,
-      });
+        rating: ratingNum,
+        comment: reviewText,
+      };
+
+      const { error } = await supabaseService.createReview(reviewData);
 
       if (error) throw error;
 
@@ -189,6 +224,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
       setRating('');
       setReviewText('');
     } catch (error) {
+      console.error('Error creating review:', error);
       Alert.alert('Error', 'Failed to create review. Please try again.');
     } finally {
       setIsLoading(false);

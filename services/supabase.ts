@@ -31,10 +31,11 @@ export type Review = {
   id: string;
   user_id: string;
   song_title: string;
-  artist: string;
+  artist_name: string;
   rating: number;
   comment?: string;
   created_at: string;
+  updated_at: string;
 };
 
 export type Follow = {
@@ -86,7 +87,7 @@ export const supabaseService = {
   },
 
   // Review operations
-  async createReview(review: Omit<Review, 'id' | 'created_at'>) {
+  async createReview(review: Omit<Review, 'id' | 'created_at' | 'updated_at'>) {
     const { data, error } = await supabase
       .from('reviews')
       .insert([review])

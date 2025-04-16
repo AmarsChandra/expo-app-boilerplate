@@ -25,9 +25,10 @@ export type Profile = {
 export type Review = {
   id: string;
   user_id: string;
-  song_id: string;
+  song_title: string;
+  artist_name: string;
   rating: number;
-  content: string | null;
+  comment?: string;
   created_at: string;
   updated_at: string;
 };
@@ -189,6 +190,15 @@ export const supabaseService = {
       .from('reviews')
       .select('*, profiles(*)')
       .eq('song_id', songId)
+      .order('created_at', { ascending: false });
+
+    return { data, error };
+  },
+
+  getReviews: async () => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, profiles(*)')
       .order('created_at', { ascending: false });
 
     return { data, error };
