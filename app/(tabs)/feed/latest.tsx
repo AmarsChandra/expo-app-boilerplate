@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabaseService } from '@/services/supabase';
 import { useState, useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import ReviewDetailModal from './review-detail-modal';
 
 type ReviewWithProfile = {
   id: string;
@@ -22,7 +23,7 @@ type ReviewWithProfile = {
   };
 };
 
-function ReviewCard({ review }: { review: ReviewWithProfile }) {
+function ReviewCard({ review, onPress }: { review: ReviewWithProfile; onPress: () => void }) {
   const formattedDate = new Date(review.created_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -30,55 +31,57 @@ function ReviewCard({ review }: { review: ReviewWithProfile }) {
   });
 
   return (
-    <View style={styles.reviewCard}>
-      <View style={styles.reviewHeader}>
-        <View style={styles.userInfo}>
-          {review.profiles.avatar_url ? (
-            <Image source={{ uri: review.profiles.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.defaultAvatar]}>
-              <MaterialCommunityIcons name="account" size={24} color="#666" />
+    <TouchableOpacity onPress={onPress}>
+      <View style={styles.reviewCard}>
+        <View style={styles.reviewHeader}>
+          <View style={styles.userInfo}>
+            {review.profiles.avatar_url ? (
+              <Image source={{ uri: review.profiles.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.defaultAvatar]}>
+                <MaterialCommunityIcons name="account" size={24} color="#666" />
+              </View>
+            )}
+            <View style={styles.userTextContainer}>
+              <ThemedText style={styles.username} numberOfLines={1}>{review.profiles.username}</ThemedText>
+              <ThemedText style={styles.date}>{formattedDate}</ThemedText>
+            </View>
+          </View>
+          {review.album_cover_url && (
+            <Image 
+              source={{ uri: review.album_cover_url }} 
+              style={styles.albumCover}
+            />
+          )}
+        </View>
+
+        <View style={styles.contentSection}>
+          <View style={styles.albumInfo}>
+            <ThemedText style={styles.songTitle} numberOfLines={1}>{review.song_title}</ThemedText>
+            <ThemedText style={styles.artistName} numberOfLines={1}>{review.artist_name}</ThemedText>
+          </View>
+
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingStars}>
+              {[...Array(5)].map((_, index) => (
+                <MaterialCommunityIcons
+                  key={index}
+                  name={index < review.rating ? "star" : "star-outline"}
+                  size={20}
+                  color="#FFD700"
+                />
+              ))}
+            </View>
+          </View>
+
+          {review.comment && (
+            <View style={styles.commentContainer}>
+              <ThemedText style={styles.content} numberOfLines={1}>{review.comment}</ThemedText>
             </View>
           )}
-          <View style={styles.userTextContainer}>
-            <ThemedText style={styles.username}>{review.profiles.username}</ThemedText>
-            <ThemedText style={styles.date}>{formattedDate}</ThemedText>
-          </View>
         </View>
-        {review.album_cover_url && (
-          <Image 
-            source={{ uri: review.album_cover_url }} 
-            style={styles.albumCover}
-          />
-        )}
       </View>
-
-      <View style={styles.contentSection}>
-        <View style={styles.albumInfo}>
-          <ThemedText style={styles.songTitle}>{review.song_title}</ThemedText>
-          <ThemedText style={styles.artistName}>{review.artist_name}</ThemedText>
-        </View>
-
-        <View style={styles.ratingContainer}>
-          <View style={styles.ratingStars}>
-            {[...Array(5)].map((_, index) => (
-              <MaterialCommunityIcons
-                key={index}
-                name={index < review.rating ? "star" : "star-outline"}
-                size={20}
-                color="#FFD700"
-              />
-            ))}
-          </View>
-        </View>
-
-        {review.comment && (
-          <View style={styles.commentContainer}>
-            <ThemedText style={styles.content}>{review.comment}</ThemedText>
-          </View>
-        )}
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -87,6 +90,7 @@ export default function LatestFeedScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<ReviewWithProfile | null>(null);
 
   const fetchReviews = async () => {
     try {
@@ -164,7 +168,12 @@ export default function LatestFeedScreen() {
         ) : (
           <FlatList
             data={reviews}
-            renderItem={({ item }) => <ReviewCard review={item} />}
+            renderItem={({ item }) => (
+              <ReviewCard 
+                review={item} 
+                onPress={() => setSelectedReview(item)}
+              />
+            )}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
@@ -174,6 +183,12 @@ export default function LatestFeedScreen() {
           />
         )}
       </SafeAreaView>
+
+      <ReviewDetailModal
+        review={selectedReview!}
+        visible={!!selectedReview}
+        onClose={() => setSelectedReview(null)}
+      />
     </ThemedView>
   );
 }
@@ -252,10 +267,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
+    flex: 1,
   },
   artistName: {
     fontSize: 14,
     color: '#666',
+    flex: 1,
   },
   ratingContainer: {
     marginBottom: 12,
@@ -271,6 +288,7 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 14,
     lineHeight: 20,
+    flex: 1,
   },
   emptyContainer: {
     flex: 1,
