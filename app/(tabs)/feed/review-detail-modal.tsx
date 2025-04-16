@@ -2,17 +2,9 @@ import { StyleSheet, View, Modal, Image, TouchableOpacity, ScrollView } from 're
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { type Review } from '../../../src/services/supabase';
 
-type ReviewWithProfile = {
-  id: string;
-  user_id: string;
-  song_title: string;
-  artist_name: string;
-  rating: number;
-  comment: string | null;
-  album_cover_url?: string;
-  created_at: string;
-  updated_at: string;
+type ReviewWithProfile = Review & {
   profiles: {
     username: string;
     avatar_url: string | null;

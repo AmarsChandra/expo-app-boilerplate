@@ -109,12 +109,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   safeArea: {
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     height: 50,
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },

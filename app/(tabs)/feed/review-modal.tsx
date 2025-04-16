@@ -122,7 +122,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
-  const [rating, setRating] = useState('');
+  const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -163,7 +163,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
       return;
     }
 
-    const ratingNum = parseFloat(rating);
+    const ratingNum = parseFloat(rating.toString());
     if (isNaN(ratingNum) || ratingNum < 0 || ratingNum > 10) {
       Alert.alert('Error', 'Rating must be a number between 0 and 10');
       return;
@@ -204,13 +204,13 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
         throw profileError;
       }
 
-      const reviewData: Omit<Review, 'id' | 'created_at' | 'updated_at'> = {
+      const reviewData = {
         user_id: userId,
         song_title: selectedAlbum.name,
-        artist_name: selectedAlbum.artists[0].name,
         rating: ratingNum,
         comment: reviewText,
-        album_cover_url: selectedAlbum.images[0]?.url || null
+        artist_name: selectedAlbum.artists[0].name,
+        album_cover_url: selectedAlbum.images[0]?.url
       };
 
       const { error } = await supabaseService.createReview(reviewData);
@@ -222,7 +222,7 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
       // Reset form
       setSearchQuery('');
       setSelectedAlbum(null);
-      setRating('');
+      setRating(0);
       setReviewText('');
     } catch (error) {
       console.error('Error creating review:', error);
@@ -306,14 +306,24 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
 
           {selectedAlbum && (
             <>
-              <TextInput
-                style={styles.input}
-                placeholder="Rating (0-10)"
-                value={rating}
-                onChangeText={setRating}
-                keyboardType="numeric"
-                editable={!isLoading}
-              />
+              <View style={styles.ratingContainer}>
+                <ThemedText style={styles.label}>Rating</ThemedText>
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => setRating(star)}
+                      style={styles.starButton}
+                    >
+                      <MaterialCommunityIcons
+                        name={star <= rating ? "star" : "star-outline"}
+                        size={32}
+                        color="#FFD700"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
               
               <TextInput
                 style={[styles.input, styles.textArea]}
@@ -494,5 +504,22 @@ const styles = StyleSheet.create({
   selectedArtistName: {
     fontSize: 16,
     color: '#666',
+  },
+  ratingContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  starButton: {
+    padding: 8,
   },
 }); 

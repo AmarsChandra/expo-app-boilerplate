@@ -156,7 +156,7 @@ export default function LatestFeedScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         {isLoading && !refreshing ? (
           <View style={styles.emptyContainer}>
             <ThemedText style={styles.loadingText}>Loading reviews...</ThemedText>
@@ -201,7 +201,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   reviewCard: {
     backgroundColor: 'white',

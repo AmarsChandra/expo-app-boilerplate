@@ -1,16 +1,20 @@
 import 'react-native-url-polyfill/auto';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from 'react-native-dotenv';
+import { createClient, AuthError, Session } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+export const supabase = createClient(
+  Constants.expoConfig?.extra?.SUPABASE_URL ?? '',
+  Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ?? '',
+  {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  }
+);
 
 export type Profile = {
   id: string;
@@ -35,15 +39,16 @@ export type Review = {
 };
 
 export const supabaseService = {
+  supabase,
   // Auth functions
-  signIn: async (email: string, password: string) => {
+  signIn: async (email: string, password: string): Promise<{ data: any; error: AuthError | null }> => {
     return await supabase.auth.signInWithPassword({
       email,
       password,
     });
   },
 
-  signUp: async (email: string, password: string) => {
+  signUp: async (email: string, password: string): Promise<{ data: any; error: AuthError | null }> => {
     try {
       console.log('Attempting to sign up with:', { email });
       
@@ -61,7 +66,7 @@ export const supabaseService = {
         console.error('No user data returned');
         return {
           data: null,
-          error: new Error('Failed to create user')
+          error: new Error('Failed to create user') as AuthError
         };
       }
 
@@ -69,7 +74,7 @@ export const supabaseService = {
       return { data, error: null };
     } catch (error) {
       console.error('Signup process error:', error);
-      return { data: null, error };
+      return { data: null, error: error as AuthError };
     }
   },
 
@@ -179,7 +184,13 @@ export const supabaseService = {
   getReviewsByUser: async (userId: string) => {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          username,
+          avatar_url
+        )
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
