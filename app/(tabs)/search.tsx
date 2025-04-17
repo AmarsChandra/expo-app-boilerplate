@@ -1,160 +1,204 @@
-import { StyleSheet, View, FlatList, Image, TouchableOpacity, TextInput, Animated } from 'react-native';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
+import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, Image, ActivityIndicator, Animated } from 'react-native';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabaseService, type Profile } from '../../src/services/supabase';
-import { useState, useEffect, useRef } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ProfileModal } from './profile-modal';
+import { Profile } from '@/src/services/supabase';
+import { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { useRouter } from 'expo-router';
+import { supabase } from '@/src/lib/supabase';
 
-function ProfileCard({ profile, onPress }: { profile: Profile; onPress: () => void }) {
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <View style={styles.profileCard}>
-        <View style={styles.profileInfo}>
-          {profile.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.defaultAvatar]}>
-              <MaterialCommunityIcons name="account" size={24} color="#666" />
-            </View>
-          )}
-          <ThemedText style={styles.username}>{profile.username}</ThemedText>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
+type SearchResult = Profile & {
+  isFollowing: boolean;
+};
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [profiles, setProfiles] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showArrow, setShowArrow] = useState(true);
-  const arrowAnim = useRef(new Animated.Value(0)).current;
+  const [arrowAnim] = useState(new Animated.Value(0));
+  const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    if (showArrow) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(arrowAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(arrowAnim, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }
-  }, [showArrow]);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(arrowAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(arrowAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const searchProfiles = async (query: string) => {
     if (!query.trim()) {
       setProfiles([]);
+      setShowArrow(true);
       return;
     }
 
+    setLoading(true);
+    setShowArrow(false);
     try {
-      setIsLoading(true);
-      const results = await supabaseService.searchProfiles(query);
-      setProfiles(results);
-      setShowArrow(false);
-    } catch (err) {
-      console.error('Error searching profiles:', err);
-      setProfiles([]);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
+        .ilike('username', `%${query}%`)
+        .order('username');
+
+      if (error) throw error;
+
+      if (data) {
+        // Check following status for each profile
+        const profilesWithFollowing = await Promise.all(
+          data.map(async (profile) => {
+            const { data: followingData } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', user?.id)
+              .eq('following_id', profile.id)
+              .single();
+
+            return {
+              ...profile,
+              isFollowing: !!followingData,
+            };
+          })
+        );
+
+        setProfiles(profilesWithFollowing);
+      }
+    } catch (error) {
+      console.error('Error searching profiles:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      searchProfiles(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  const handleProfilePress = (profile: Profile) => {
-    setSelectedProfile(profile);
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    searchProfiles(text);
   };
 
-  const arrowStyle = {
-    transform: [
-      {
-        translateY: arrowAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -20],
-        }),
-      },
-      {
-        rotate: '180deg',
-      },
-    ],
+  const handleProfilePress = (profile: SearchResult) => {
+    router.push({
+      pathname: '/profile-modal',
+      params: { profileId: profile.id }
+    });
+  };
+
+  const handleFollow = async (profile: SearchResult) => {
+    if (!user) return;
+
+    try {
+      if (profile.isFollowing) {
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', profile.id);
+      } else {
+        await supabase
+          .from('follows')
+          .insert([{ follower_id: user.id, following_id: profile.id }]);
+      }
+
+      // Update the local state
+      setProfiles(profiles.map(p => 
+        p.id === profile.id 
+          ? { ...p, isFollowing: !p.isFollowing }
+          : p
+      ));
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    }
   };
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search profiles..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-            />
-          </View>
-          
-          {searchQuery && (
-            <View style={styles.dropdownContainer}>
-              {isLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ThemedText>Searching...</ThemedText>
-                </View>
-              ) : profiles.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <ThemedText>No profiles found</ThemedText>
-                </View>
-              ) : (
-                <FlatList
-                  data={profiles}
-                  renderItem={({ item }) => (
-                    <ProfileCard
-                      profile={item}
-                      onPress={() => handleProfilePress(item)}
-                    />
-                  )}
-                  keyExtractor={(item) => item.id}
-                  contentContainerStyle={styles.dropdownContent}
-                  keyboardShouldPersistTaps="handled"
-                />
-              )}
-            </View>
-          )}
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search users..."
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholderTextColor="#666"
+          />
         </View>
 
-        {showArrow && !searchQuery && (
+        {showArrow && (
           <View style={styles.arrowContainer}>
-            <Animated.View style={[styles.arrow, arrowStyle]}>
-              <MaterialCommunityIcons name="arrow-down" size={32} color="#0A7EA4" />
+            <Animated.View
+              style={[
+                styles.arrow,
+                {
+                  transform: [
+                    {
+                      translateY: arrowAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 10],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Ionicons name="arrow-up" size={24} color="#666" />
             </Animated.View>
             <ThemedText style={styles.arrowText}>Search for other users here</ThemedText>
           </View>
         )}
 
-        {selectedProfile && (
-          <ProfileModal
-            profile={selectedProfile}
-            visible={!!selectedProfile}
-            onClose={() => setSelectedProfile(null)}
+        {loading ? (
+          <ActivityIndicator style={styles.loader} />
+        ) : (
+          <FlatList
+            data={profiles}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.profileItem}
+                onPress={() => handleProfilePress(item)}
+              >
+                <Image
+                  source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
+                  style={styles.avatar}
+                />
+                <View style={styles.profileInfo}>
+                  <ThemedText style={styles.username}>{item.username}</ThemedText>
+                  {item.display_name && (
+                    <ThemedText style={styles.displayName}>{item.display_name}</ThemedText>
+                  )}
+                </View>
+                {user?.id !== item.id && (
+                  <TouchableOpacity
+                    style={[
+                      styles.followButton,
+                      item.isFollowing && styles.followingButton
+                    ]}
+                    onPress={() => handleFollow(item)}
+                  >
+                    <ThemedText style={[
+                      styles.followButtonText,
+                      item.isFollowing && styles.followingButtonText
+                    ]}>
+                      {item.isFollowing ? 'Following' : 'Follow'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            )}
           />
         )}
       </SafeAreaView>
@@ -168,94 +212,81 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    paddingHorizontal: 15,
   },
   searchContainer: {
-    padding: 16,
-  },
-  searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    padding: 10,
+    marginTop: 10,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    width: '100%',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    height: 40,
     fontSize: 16,
-  },
-  dropdownContainer: {
-    position: 'absolute',
-    top: 72,
-    left: 16,
-    right: 16,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    maxHeight: 300,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 1000,
-  },
-  dropdownContent: {
-    padding: 8,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  defaultAvatar: {
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  username: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    padding: 16,
-    alignItems: 'center',
+    color: '#000',
   },
   arrowContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: 0,
-    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ translateY: -100 }],
+    marginTop: 20,
   },
   arrow: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   arrowText: {
     fontSize: 16,
     color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
+  },
+  loader: {
+    marginTop: 20,
+  },
+  profileItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    marginVertical: 5,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    width: '100%',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  displayName: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  followButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+  },
+  followingButton: {
+    backgroundColor: '#eee',
+  },
+  followButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  followingButtonText: {
+    color: '#666',
   },
 }); 
+

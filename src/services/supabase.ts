@@ -24,6 +24,8 @@ export type Profile = {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  followers_count?: number;
+  following_count?: number;
 };
 
 export type Review = {
@@ -149,9 +151,18 @@ export const supabaseService = {
   getFollowing: async (userId: string) => {
     const { data, error } = await supabase
       .from('follows')
-      .select('following_id, profiles(*)')
+      .select(`
+        following_id,
+        profiles:following_id (
+          id,
+          username,
+          display_name,
+          avatar_url
+        )
+      `)
       .eq('follower_id', userId);
 
+    if (error) throw error;
     return { data, error };
   },
 
@@ -244,10 +255,7 @@ export const supabaseService = {
       .ilike('username', `%${query}%`)
       .order('username', { ascending: true });
 
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   },
 }; 

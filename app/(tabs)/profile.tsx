@@ -182,19 +182,21 @@ export default function ProfileScreen() {
         return;
       }
 
-      Alert.alert(
-        'Success',
-        'Please check your email for a confirmation link to complete your registration.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setIsSignInModalVisible(false);
-              setIsLoginMode(true);
-            },
-          },
-        ]
-      );
+      // After successful sign-up, automatically sign in
+      const { data: signInData, error: signInError } = await supabaseService.signIn(email, password);
+      
+      if (signInError) {
+        Alert.alert('Error', 'Account created but failed to sign in. Please try signing in manually.');
+        return;
+      }
+
+      if (signInData?.user) {
+        setUser(signInData.user);
+        setIsSignInModalVisible(false);
+        setEmail('');
+        setPassword('');
+        fetchReviews();
+      }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
