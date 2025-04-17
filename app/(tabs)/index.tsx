@@ -1,11 +1,5 @@
-import { View, Text } from 'react-native';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
+import { Redirect } from 'expo-router';
 
 export default function IndexScreen() {
-  return (
-    <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ThemedText>Index Screen</ThemedText>
-    </ThemedView>
-  );
+  return <Redirect href="/feed" />;
 } 

@@ -31,6 +31,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="profile-modal"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="settings/edit-profile-modal"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="feed"
         options={{
           title: 'Feed',

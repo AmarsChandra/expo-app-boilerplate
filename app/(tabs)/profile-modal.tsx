@@ -187,6 +187,8 @@ export function ProfileModal({ profile, visible, onClose }: ProfileModalProps) {
   );
 }
 
+export default ProfileModal;
+
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,

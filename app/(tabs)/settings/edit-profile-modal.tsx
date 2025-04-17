@@ -13,18 +13,24 @@ import { supabaseService, type Profile } from '../../../src/services/supabase';
 import { ThemedText } from '../../../components/ThemedText';
 
 type EditProfileModalProps = {
-  profile: Profile;
+  profile: Profile | null;
   visible: boolean;
   onClose: (updatedProfile?: Profile) => void;
 };
 
 export default function EditProfileModal({ profile, visible, onClose }: EditProfileModalProps) {
-  const [username, setUsername] = useState(profile.username);
+  const [username, setUsername] = useState(profile?.username || '');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setUsername(profile.username);
+    if (profile) {
+      setUsername(profile.username);
+    }
   }, [profile]);
+
+  if (!profile) {
+    return null;
+  }
 
   const handleSave = async () => {
     const formattedUsername = username.trim().toLowerCase();
