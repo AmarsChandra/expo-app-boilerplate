@@ -1,13 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { supabaseService } from '../../src/services/supabase';
+import { supabaseService, type Profile } from '../../src/services/supabase';
+import EditProfileModal from './settings/edit-profile-modal';
 
 export default function SettingsScreen() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile();
+    }
+  }, [user?.id]);
+
+  const fetchProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabaseService.getProfile(user.id);
+      if (error) throw error;
+      if (data) setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -50,7 +71,6 @@ export default function SettingsScreen() {
               await supabaseService.deleteAccount();
               await signOut();
             } catch (error) {
-              console.error('Error deleting account:', error);
               Alert.alert('Error', 'Failed to delete account. Please try again.');
             }
           },
@@ -63,7 +83,10 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Profile</ThemedText>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => setIsEditModalVisible(true)}
+        >
           <MaterialCommunityIcons name="account-edit" size={24} color="#666" />
           <ThemedText style={styles.buttonText}>Edit Profile</ThemedText>
           <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
@@ -90,6 +113,19 @@ export default function SettingsScreen() {
           <MaterialCommunityIcons name="chevron-right" size={24} color="#FF3B30" />
         </TouchableOpacity>
       </View>
+
+      {profile && (
+        <EditProfileModal
+          profile={profile}
+          visible={isEditModalVisible}
+          onClose={(updatedProfile) => {
+            setIsEditModalVisible(false);
+            if (updatedProfile) {
+              setProfile(updatedProfile);
+            }
+          }}
+        />
+      )}
     </ThemedView>
   );
 }
