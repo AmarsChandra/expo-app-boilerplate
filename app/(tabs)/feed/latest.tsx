@@ -30,6 +30,10 @@ function ReviewCard({ review, onPress }: { review: ReviewWithProfile; onPress: (
     year: 'numeric'
   });
 
+  const truncateText = (text: string) => {
+    return text.length > 23 ? text.substring(0, 23) + '...' : text;
+  };
+
   return (
     <TouchableOpacity onPress={onPress}>
       <View style={styles.reviewCard}>
@@ -43,7 +47,7 @@ function ReviewCard({ review, onPress }: { review: ReviewWithProfile; onPress: (
               </View>
             )}
             <View style={styles.userTextContainer}>
-              <ThemedText style={styles.username} numberOfLines={1}>{review.profiles.username}</ThemedText>
+              <ThemedText style={styles.username} numberOfLines={1}>{truncateText(review.profiles.username)}</ThemedText>
               <ThemedText style={styles.date}>{formattedDate}</ThemedText>
             </View>
           </View>
@@ -57,8 +61,8 @@ function ReviewCard({ review, onPress }: { review: ReviewWithProfile; onPress: (
 
         <View style={styles.contentSection}>
           <View style={styles.albumInfo}>
-            <ThemedText style={styles.songTitle} numberOfLines={1}>{review.song_title}</ThemedText>
-            <ThemedText style={styles.artistName} numberOfLines={1}>{review.artist_name}</ThemedText>
+            <ThemedText style={styles.songTitle} numberOfLines={1}>{truncateText(review.song_title)}</ThemedText>
+            <ThemedText style={styles.artistName} numberOfLines={1}>{truncateText(review.artist_name)}</ThemedText>
           </View>
 
           <View style={styles.ratingContainer}>

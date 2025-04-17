@@ -213,6 +213,28 @@ export default function ReviewModal({ visible, onClose }: ReviewModalProps) {
         album_cover_url: selectedAlbum.images[0]?.url
       };
 
+      // First, check if user has already reviewed this album
+      const { data: existingReviews, error: existingError } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('song_title', selectedAlbum.name)
+        .eq('artist_name', selectedAlbum.artists[0].name);
+
+      if (existingError) throw existingError;
+
+      // If there are existing reviews, delete them
+      if (existingReviews && existingReviews.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('reviews')
+          .delete()
+          .eq('user_id', userId)
+          .eq('song_title', selectedAlbum.name)
+          .eq('artist_name', selectedAlbum.artists[0].name);
+
+        if (deleteError) throw deleteError;
+      }
+
       const { error } = await supabaseService.createReview(reviewData);
 
       if (error) throw error;
