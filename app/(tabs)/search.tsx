@@ -1,9 +1,9 @@
-import { StyleSheet, View, FlatList, Image, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, FlatList, Image, TouchableOpacity, TextInput, Animated } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabaseService, type Profile } from '../../src/services/supabase';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ProfileModal } from './profile-modal';
 
@@ -31,6 +31,27 @@ export default function SearchScreen() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [showArrow, setShowArrow] = useState(true);
+  const arrowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (showArrow) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(arrowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(arrowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [showArrow]);
 
   const searchProfiles = async (query: string) => {
     if (!query.trim()) {
@@ -42,6 +63,7 @@ export default function SearchScreen() {
       setIsLoading(true);
       const results = await supabaseService.searchProfiles(query);
       setProfiles(results);
+      setShowArrow(false);
     } catch (err) {
       console.error('Error searching profiles:', err);
       setProfiles([]);
@@ -60,6 +82,20 @@ export default function SearchScreen() {
 
   const handleProfilePress = (profile: Profile) => {
     setSelectedProfile(profile);
+  };
+
+  const arrowStyle = {
+    transform: [
+      {
+        translateY: arrowAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -20],
+        }),
+      },
+      {
+        rotate: '180deg',
+      },
+    ],
   };
 
   return (
@@ -104,6 +140,15 @@ export default function SearchScreen() {
             </View>
           )}
         </View>
+
+        {showArrow && !searchQuery && (
+          <View style={styles.arrowContainer}>
+            <Animated.View style={[styles.arrow, arrowStyle]}>
+              <MaterialCommunityIcons name="arrow-down" size={32} color="#0A7EA4" />
+            </Animated.View>
+            <ThemedText style={styles.arrowText}>Search for other users here</ThemedText>
+          </View>
+        )}
 
         {selectedProfile && (
           <ProfileModal
@@ -194,5 +239,23 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: 16,
     alignItems: 'center',
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: -100 }],
+  },
+  arrow: {
+    marginBottom: 8,
+  },
+  arrowText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
   },
 }); 

@@ -1,18 +1,20 @@
 {
   "expo": {
-    "name": "expo-app-boilerplate",
-    "slug": "expo-app-boilerplate",
+    "name": "Loop",
+    "slug": "loop",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "loop",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cqjack.expoappboilerplate",
+      "bundleIdentifier": "com.loop.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Allow Loop to access your photos to set your profile picture",
+        "NSCameraUsageDescription": "Allow Loop to access your camera to take profile pictures"
       }
     },
     "android": {
@@ -20,7 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.cqjack.expoappboilerplate"
+      "package": "com.loop.app"
     },
     "web": {
       "bundler": "metro",
