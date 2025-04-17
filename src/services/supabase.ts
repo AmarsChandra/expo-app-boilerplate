@@ -109,9 +109,7 @@ export const supabaseService = {
   },
 
   deleteAccount: async () => {
-    const { error } = await supabase.auth.admin.deleteUser(
-      (await supabase.auth.getUser()).data.user?.id ?? ''
-    );
+    const { error } = await supabase.rpc('delete_user_account');
     if (error) throw error;
   },
 

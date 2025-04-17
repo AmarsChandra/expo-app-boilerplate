@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Alert, Linking, Modal, TextInput } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ export default function SettingsScreen() {
   const { signOut, user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [confirmationText, setConfirmationText] = useState('');
 
   useEffect(() => {
     if (user?.id) {
@@ -55,28 +57,28 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await supabaseService.deleteAccount();
-              await signOut();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirmation = async () => {
+    if (confirmationText !== 'CONFIRM') {
+      Alert.alert('Error', 'Please type CONFIRM in all caps to delete your account');
+      return;
+    }
+
+    try {
+      await supabaseService.deleteAccount();
+      await signOut();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleteModalVisible(false);
+      setConfirmationText('');
+    }
+  };
+
+  const handleTermsPrivacy = () => {
+    Linking.openURL('https://www.freeprivacypolicy.com/live/031ebefd-631b-476e-9c7e-72f0a4883912');
   };
 
   return (
@@ -95,7 +97,10 @@ export default function SettingsScreen() {
 
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Account</ThemedText>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleTermsPrivacy}
+        >
           <MaterialCommunityIcons name="file-document" size={24} color="#666" />
           <ThemedText style={styles.buttonText}>Terms & Privacy</ThemedText>
           <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
@@ -126,6 +131,52 @@ export default function SettingsScreen() {
           }}
         />
       )}
+
+      <Modal
+        visible={isDeleteModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsDeleteModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <ThemedText style={styles.modalTitle}>Delete Account</ThemedText>
+            <ThemedText style={styles.modalText}>
+              This action cannot be undone. All your data will be permanently deleted.
+            </ThemedText>
+            <ThemedText style={styles.modalText}>
+              Type CONFIRM in all caps to delete your account:
+            </ThemedText>
+            <TextInput
+              style={styles.confirmationInput}
+              value={confirmationText}
+              onChangeText={setConfirmationText}
+              placeholder="Type CONFIRM here"
+              autoCapitalize="characters"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setIsDeleteModalVisible(false);
+                  setConfirmationText('');
+                }}
+              >
+                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.deleteButton]}
+                onPress={handleDeleteConfirmation}
+              >
+                <ThemedText style={[styles.modalButtonText, styles.deleteText]}>
+                  Delete Account
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -170,5 +221,66 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: '#FF3B30',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    height: '50%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#000',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#000',
+  },
+  confirmationInput: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#E0E0E0',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 }); 
