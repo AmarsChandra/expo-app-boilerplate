@@ -86,7 +86,12 @@ export default function SearchScreen() {
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
-    searchProfiles(text);
+    if (text.trim().length > 0) {
+      searchProfiles(text);
+    } else {
+      setProfiles([]);
+      setShowArrow(true);
+    }
   };
 
   const handleProfilePress = (profile: SearchResult) => {

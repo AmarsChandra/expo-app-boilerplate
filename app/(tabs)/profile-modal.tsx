@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Image, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Image, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { supabaseService, type Profile, type Review } from '@/src/services/supab
 import ReviewDetailModal from '@/app/(tabs)/feed/review-detail-modal';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { supabase } from '@/src/services/supabase';
 
 type ReviewWithProfile = Review & {
   profiles: {
@@ -92,10 +93,30 @@ export default function ProfileModal() {
   const fetchProfile = async () => {
     if (!profileId) return;
     try {
-      const { data, error } = await supabaseService.getProfile(profileId);
-      if (error) throw error;
-      if (data) {
-        setProfile(data);
+      // Get profile data
+      const { data: profileData, error: profileError } = await supabaseService.getProfile(profileId);
+      if (profileError) throw profileError;
+
+      // Get followers count
+      const { data: followersData, error: followersError } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', profileId);
+      if (followersError) throw followersError;
+
+      // Get following count
+      const { data: followingData, error: followingError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', profileId);
+      if (followingError) throw followingError;
+
+      if (profileData) {
+        setProfile({
+          ...profileData,
+          followers_count: followersData?.length || 0,
+          following_count: followingData?.length || 0,
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -125,6 +146,8 @@ export default function ProfileModal() {
         await supabaseService.followUser(user.id, profile.id);
       }
       setIsFollowing(!isFollowing);
+      // Refresh profile data to update counts
+      await fetchProfile();
     } catch (error) {
       console.error('Error toggling follow:', error);
       Alert.alert('Error', 'Failed to update follow status');
@@ -185,61 +208,28 @@ export default function ProfileModal() {
         </View>
       </View>
 
-      <View style={styles.profileSection}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{reviews.length}</ThemedText>
-            <ThemedText style={styles.statLabel}>Reviews</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{profile.followers_count || 0}</ThemedText>
-            <ThemedText style={styles.statLabel}>Followers</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{profile.following_count || 0}</ThemedText>
-            <ThemedText style={styles.statLabel}>Following</ThemedText>
-          </View>
+      <ScrollView style={styles.scrollContent}>
+        <View style={styles.profileSection}>
+          {profile.bio && (
+            <ThemedText style={styles.bio}>{profile.bio}</ThemedText>
+          )}
         </View>
 
-        {user && user.id !== profile.id && (
-          <TouchableOpacity
-            style={[styles.followButton, isFollowing && styles.followingButton]}
-            onPress={toggleFollow}
-          >
-            <ThemedText style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
-              {isFollowing ? 'Following' : 'Follow'}
-            </ThemedText>
-          </TouchableOpacity>
-        )}
-
-        {profile.bio && (
-          <ThemedText style={styles.bio}>{profile.bio}</ThemedText>
-        )}
-      </View>
-
-      <FlatList
-        data={reviews}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ReviewCard
-            review={item}
-            onPress={() => setSelectedReview(item)}
-          />
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
-        ListEmptyComponent={
-          !isLoading ? (
+        <View style={styles.reviewsSection}>
+          {reviews.map((review) => (
+            <ReviewCard
+              key={review.id}
+              review={review}
+              onPress={() => setSelectedReview(review)}
+            />
+          ))}
+          {!isLoading && reviews.length === 0 && (
             <View style={styles.emptyContainer}>
               <ThemedText style={styles.emptyText}>No reviews yet</ThemedText>
             </View>
-          ) : null
-        }
-      />
+          )}
+        </View>
+      </ScrollView>
 
       {selectedReview && (
         <ReviewDetailModal
@@ -264,6 +254,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  scrollContent: {
+    flex: 1,
+  },
+  profileSection: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  reviewsSection: {
+    paddingHorizontal: 15,
+  },
   backButton: {
     marginRight: 15,
   },
@@ -273,28 +273,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  profileSection: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 20,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
   },
   followButton: {
     paddingHorizontal: 20,
